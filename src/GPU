@@ -1,0 +1,8 @@
+# ================================
+# Force CPU Execution (Disable Metal)
+# ================================
+print("Forcing CPU Execution...")
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+tf.config.set_visible_devices([], "GPU")
+print("✅ Forced CPU Execution. Running on CPU only.")

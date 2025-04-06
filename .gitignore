@@ -1,10 +1,15 @@
-# Ignore dataset
-dataset/
+# Ignore dataset folders
 PlantVillage/
-*.zip
-*.tar.gz
-*.csv
-*.h5
-*.pkl
-*.pt
-*.onnx
+dataset/
+data/
+models/
+
+# Ignore virtual environments
+.venv/
+venv/
+__pycache__/
+
+# Ignore system + IDE files
+.DS_Store
+*.log
+.ipynb_checkpoints/
