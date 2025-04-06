@@ -1,0 +1,10 @@
+# Ignore dataset
+dataset/
+PlantVillage/
+*.zip
+*.tar.gz
+*.csv
+*.h5
+*.pkl
+*.pt
+*.onnx
