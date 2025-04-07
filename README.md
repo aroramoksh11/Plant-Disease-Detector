@@ -73,3 +73,14 @@ The code includes memory optimization techniques:
 - TensorFlow memory growth control
 - Chunk-based feature extraction
 - Garbage collection during processing
+
+## Acknowledgments
+- Dataset source: [Source Name]
+- ResNet architecture: He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition.
+- Special thanks to [Any specific acknowledgments]
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+Developed with ❤️ by Moksh Arora
