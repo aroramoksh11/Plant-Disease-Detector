@@ -75,9 +75,8 @@ The code includes memory optimization techniques:
 - Garbage collection during processing
 
 ## Acknowledgments
-- Dataset source: [Source Name]
+- Dataset source: PlantVillage
 - ResNet architecture: He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition.
-- Special thanks to [Any specific acknowledgments]
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
