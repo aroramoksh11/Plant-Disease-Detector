@@ -312,10 +312,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- TensorFlow team for the deep learning framework
-- scikit-learn team for ML implementations
+- Authors of the original paper for their innovative approach.
 - The research community for plant disease datasets
-- ResNet paper authors for the architecture
 - Grad-CAM paper authors for the visualization technique
 
 ---
