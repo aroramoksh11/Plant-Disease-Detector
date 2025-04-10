@@ -1,8 +1,8 @@
-# Plant Disease Classification
+# AgriVision AI: Advanced Plant Disease Detection System
 
 An advanced deep learning project for automated plant disease classification using computer vision and machine learning techniques. This project combines ResNet architecture with traditional ML classifiers to provide robust plant disease detection and analysis.
 
-## 🌟 Features
+## Features
 
 - Advanced plant disease classification using ResNet architecture
 - Multiple ML classifier implementations (Random Forest, SVM, Logistic Regression)
@@ -15,7 +15,7 @@ An advanced deep learning project for automated plant disease classification usi
 - IoU (Intersection over Union) calculation for model evaluation
 - Disease-specific analysis and visualization
 
-## 📋 Requirements
+## Requirements
 
 - Python 3.8+
 - macOS with Apple Silicon support (M1/M2 chips)
@@ -24,7 +24,7 @@ An advanced deep learning project for automated plant disease classification usi
 - Minimum 16GB RAM recommended
 - 50GB+ free disk space for dataset and model storage
 
-## 🛠️ Installation
+## Installation
 
 1. Clone the repository:
 ```bash
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 python verify_setup.py
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 .
@@ -86,7 +86,7 @@ python verify_setup.py
 └── validate_setup.py    # Setup validation script
 ```
 
-## 🚀 Usage
+## Usage
 
 1. Prepare your dataset:
 ```bash
@@ -113,7 +113,7 @@ Alternatively, you can run the entire pipeline using:
 ./run.sh
 ```
 
-## 📊 Model Architecture
+## Model Architecture
 
 The project implements a hybrid approach combining:
 - ResNet-based deep learning model for feature extraction
@@ -123,41 +123,41 @@ The project implements a hybrid approach combining:
 - PCA-based dimensionality reduction
 - IoU-based evaluation metrics
 
-## 🔍 Features and Capabilities
+## Features and Capabilities
 
-1. **Data Processing**
-   - Automated data augmentation
-   - Preprocessing pipeline
-   - Dataset splitting and validation
-   - Image resizing and normalization
-   - Data augmentation techniques
-   - Batch processing support
+### 1. Data Processing
+- Automated data augmentation
+- Preprocessing pipeline
+- Dataset splitting and validation
+- Image resizing and normalization
+- Data augmentation techniques
+- Batch processing support
 
-2. **Training**
-   - Multi-model training support
-   - Progress tracking and checkpointing
-   - Early stopping and learning rate scheduling
-   - Cross-validation support
-   - Model checkpointing
-   - Training metrics visualization
+### 2. Training
+- Multi-model training support
+- Progress tracking and checkpointing
+- Early stopping and learning rate scheduling
+- Cross-validation support
+- Model checkpointing
+- Training metrics visualization
 
-3. **Visualization**
-   - Training progress plots
-   - Confusion matrices
-   - Grad-CAM heatmaps for model interpretability
-   - Activation pattern analysis
-   - Feature importance visualization
-   - Disease-specific visualizations
+### 3. Visualization
+- Training progress plots
+- Confusion matrices
+- Grad-CAM heatmaps for model interpretability
+- Activation pattern analysis
+- Feature importance visualization
+- Disease-specific visualizations
 
-4. **Evaluation**
-   - Comprehensive metrics calculation
-   - Per-class performance analysis
-   - Comparative model evaluation
-   - Detailed reporting
-   - IoU-based evaluation
-   - Cross-validation results
+### 4. Evaluation
+- Comprehensive metrics calculation
+- Per-class performance analysis
+- Comparative model evaluation
+- Detailed reporting
+- IoU-based evaluation
+- Cross-validation results
 
-## 📈 Output and Results
+## Output and Results
 
 The system generates:
 - Trained model files
@@ -172,7 +172,7 @@ The system generates:
 
 All outputs are organized in the `outputs/` directory with timestamp-based subdirectories.
 
-## 🔧 Configuration
+## Configuration
 
 The project uses configuration files in the `src/` directory:
 - Model configurations
@@ -183,7 +183,7 @@ The project uses configuration files in the `src/` directory:
 - Feature extraction parameters
 - Evaluation metrics settings
 
-Key configuration parameters:
+### Key Configuration Parameters
 - Image size: 224x224
 - Batch size: 32
 - Validation split: 20%
@@ -192,7 +192,7 @@ Key configuration parameters:
 - Learning rate: Configurable
 - Early stopping patience: Configurable
 
-## 📝 Logging
+## Logging
 
 Comprehensive logging is implemented with:
 - Training progress logs
@@ -206,7 +206,7 @@ Comprehensive logging is implemented with:
 
 Logs are stored in the `logs/` directory with timestamp-based organization.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. When contributing:
 1. Fork the repository
@@ -215,11 +215,11 @@ Contributions are welcome! Please feel free to submit a Pull Request. When contr
 4. Push to the branch
 5. Create a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - TensorFlow team for the deep learning framework
 - scikit-learn team for ML implementations
@@ -228,4 +228,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Grad-CAM paper authors for the visualization technique
 
 ---
-Developed with ❤️ by Moksh Arora
+Developed by Moksh Arora
