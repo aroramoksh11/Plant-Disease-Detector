@@ -128,10 +128,29 @@ def print_data_summary():
         
         logger.info(f"Total {split_dir.name} images: {total_images}")
 
+def create_directory_structure():
+    """Create required directory structure."""
+    directories = [
+        'data/raw/bacterial_blight',
+        'data/raw/blast',
+        'data/raw/brown_spot',
+        'data/raw/healthy',
+        'data/processed',
+        'outputs/logs',
+        'outputs/models',
+        'outputs/visualizations',
+        'models'
+    ]
+    
+    for directory in directories:
+        Path(directory).mkdir(parents=True, exist_ok=True)
+        print(f"Created directory: {directory}")
+
 if __name__ == "__main__":
     logger.info("Starting data organization")
     create_directories()
     organize_data()
     cleanup_unnecessary_files()
     print_data_summary()
+    create_directory_structure()
     logger.info("Data organization completed")

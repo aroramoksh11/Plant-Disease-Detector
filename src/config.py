@@ -3,16 +3,20 @@ Configuration settings for the plant disease classification project.
 """
 
 from pathlib import Path
+import os
 
 # Directory paths
-DATA_DIR = Path("data")
+BASE_DIR = Path(__file__).parent.parent
+DATA_DIR = BASE_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
-MODELS_DIR = Path("models")
-OUTPUTS_DIR = Path("outputs")
+MODELS_DIR = BASE_DIR / "models"
+OUTPUTS_DIR = BASE_DIR / "outputs"
+LOGS_DIR = OUTPUTS_DIR / "logs"
 
 # Create directories if they don't exist
-for directory in [DATA_DIR, RAW_DATA_DIR, PROCESSED_DATA_DIR, MODELS_DIR, OUTPUTS_DIR]:
+for directory in [DATA_DIR, RAW_DATA_DIR, PROCESSED_DATA_DIR, 
+                 MODELS_DIR, OUTPUTS_DIR, LOGS_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 
 # Data configuration
@@ -27,66 +31,93 @@ DATA_CONFIG = {
         "blast",
         "brown_spot",
         "healthy"
-    ]
+    ],
+    "augmentation": {
+        "rotation_range": 20,
+        "width_shift_range": 0.2,
+        "height_shift_range": 0.2,
+        "horizontal_flip": True,
+        "vertical_flip": True,
+        "zoom_range": 0.2,
+        "shear_range": 0.2,
+        "fill_mode": "nearest",
+        "brightness_range": [0.8, 1.2]
+    }
 }
 
 # Model configuration
 MODEL_CONFIG = {
-    "epochs": 50,
-    "learning_rate": 0.001,
-    "early_stopping_patience": 10,
-    "reduce_lr_patience": 5,
-    "reduce_lr_factor": 0.1,
+    "epochs": 100,
+    "learning_rate": 0.0001,
+    "early_stopping_patience": 15,
+    "reduce_lr_patience": 8,
+    "reduce_lr_factor": 0.2,
+    "batch_size": 32,
+    "use_mixed_precision": True,
+    "use_gradient_clipping": True,
+    "label_smoothing": 0.1,
+    "warmup_epochs": 5,
+    "use_cross_validation": True,
+    "n_folds": 5,
     "resnet": {
         "weights": "imagenet",
         "include_top": False,
         "input_shape": (224, 224, 3),
-        "dense_units": 1024,
-        "dropout_rate": 0.5
-    },
-    "random_forest": {
-        "n_estimators": 100,
-        "max_depth": None,
-        "random_state": 42
+        "dense_units": [2048, 1024],
+        "dropout_rate": 0.3,
+        "l2_lambda": 0.0001,
+        "attention_units": 512
     }
 }
 
 # ML Classifiers configuration
 ML_CONFIG = {
     "random_forest": {
-        "n_estimators": 100,
-        "max_depth": None,
-        "min_samples_split": 2,
-        "min_samples_leaf": 1,
-        "random_state": 42
+        "n_estimators": 200,
+        "max_depth": 20,
+        "min_samples_split": 5,
+        "min_samples_leaf": 2,
+        "class_weight": "balanced",
+        "random_state": 42,
+        "n_jobs": -1
     },
     "svm": {
         "kernel": "rbf",
-        "C": 1.0,
-        "gamma": "scale",
+        "C": 10.0,
+        "gamma": "auto",
         "probability": True,
+        "class_weight": "balanced",
         "random_state": 42
     },
     "logistic_regression": {
         "multi_class": "multinomial",
         "solver": "lbfgs",
-        "max_iter": 1000,
+        "max_iter": 2000,
+        "class_weight": "balanced",
         "random_state": 42
     },
     "voting": {
         "voting": "soft",
-        "weights": [2, 1, 1]  # Weights for RF, SVM, and LR respectively
+        "weights": [3, 2, 1]
     }
 }
 
 # Feature extraction configuration
 FEATURE_CONFIG = {
+    "image_size": (224, 224),
+    "batch_size": 32,
     "color_features": True,
     "texture_features": True,
     "shape_features": True,
     "hog_features": True,
     "lbp_features": True,
-    "pca_components": 50
+    "deep_features": True,
+    "use_multiple_scales": True,
+    "scales": [1.0, 0.75, 0.5],
+    "use_pca": True,
+    "pca_components": 100,
+    "feature_selection": True,
+    "n_selected_features": 500
 }
 
 # Visualization configuration
@@ -122,6 +153,18 @@ IOU_CONFIG = {
     }
 }
 
+# Data Augmentation configuration
+AUGMENTATION_CONFIG = {
+    "rotation_range": 20,
+    "zoom_range": 0.2,
+    "horizontal_flip": True,
+    "vertical_flip": True,
+    "brightness_range": [0.8, 1.2],
+    "contrast_range": [0.8, 1.2],
+    "noise_stddev": 0.01,
+    "translation_range": 0.1
+}
+
 # Logging configuration
 LOGGING_CONFIG = {
     "version": 1,
@@ -129,7 +172,7 @@ LOGGING_CONFIG = {
     "formatters": {
         "standard": {
             "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-        },
+        }
     },
     "handlers": {
         "console": {
@@ -142,15 +185,12 @@ LOGGING_CONFIG = {
             "class": "logging.FileHandler",
             "level": "DEBUG",
             "formatter": "standard",
-            "filename": "plant_disease.log",
+            "filename": str(LOGS_DIR / "plant_disease.log"),
             "mode": "a"
         }
     },
-    "loggers": {
-        "": {
-            "handlers": ["console", "file"],
-            "level": "INFO",
-            "propagate": True
-        }
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "file"]
     }
 } 

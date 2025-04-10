@@ -9,12 +9,13 @@ import logging
 from pathlib import Path
 from .config import LOGGING_CONFIG, OUTPUTS_DIR
 
-# Set up logging
-logging.basicConfig(**LOGGING_CONFIG)
+# Setup module logger instead of basic config
 logger = logging.getLogger(__name__)
 
 class DiseaseAnalyzer:
     def __init__(self):
+        """Initialize disease analyzer."""
+        self.logger = logging.getLogger(__name__)
         # Disease severity levels
         self.severity_levels = {
             0: "Healthy",

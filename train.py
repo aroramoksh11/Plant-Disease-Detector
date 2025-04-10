@@ -3,13 +3,29 @@ Enhanced training script for plant disease classification with detailed outputs 
 """
 
 import os
-import numpy as np
-import tensorflow as tf
-import logging
-import time
+import logging.config
 from pathlib import Path
 from datetime import datetime
+import time
 from tqdm import tqdm
+from src.config import LOGGING_CONFIG, MODEL_CONFIG, ML_CONFIG, VIS_CONFIG, OUTPUTS_DIR
+from src.training_metrics import TrainingTracker
+from src.model_enhancements import EnhancedModelBuilder
+
+# Setup logging configuration first
+def setup_logging():
+    """Setup logging configuration."""
+    log_dir = OUTPUTS_DIR / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    logging.config.dictConfig(LOGGING_CONFIG)
+    return logging.getLogger(__name__)
+
+# Setup logging before other imports
+logger = setup_logging()
+
+# Now import other modules
+import numpy as np
+import tensorflow as tf
 from src.data_processing import DataProcessor
 from src.feature_extractor import FeatureExtractor
 from src.visualization import Visualizer
@@ -19,17 +35,6 @@ from src.ml_classifiers import MLClassifiers
 from src.heatmap import HeatmapGenerator
 from src.disease_classifier import DiseaseClassifier
 from src.iou_calculator import IoUCalculator
-from src.config import LOGGING_CONFIG, MODEL_CONFIG, ML_CONFIG, VIS_CONFIG, OUTPUTS_DIR
-
-def setup_logging():
-    """Setup enhanced logging with timestamp."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = OUTPUTS_DIR / "logs"
-    log_dir.mkdir(exist_ok=True)
-    
-    LOGGING_CONFIG["handlers"]["file"]["filename"] = str(log_dir / f"training_{timestamp}.log")
-    logging.basicConfig(**LOGGING_CONFIG)
-    return logging.getLogger(__name__)
 
 def print_section_header(logger, title):
     """Print formatted section header."""
@@ -83,228 +88,44 @@ def generate_comparative_heatmaps(heatmap_generator, img_batch, predictions, cla
             title=f"True: {class_names[true_label]}\nPred: {class_names[pred_label]}"
         )
 
-def main():
-    """Enhanced main training function with detailed outputs and heatmap analysis."""
-    logger = setup_logging()
-    start_time = time.time()
+def load_and_prepare_data(data_processor):
+    """Load and prepare data for training."""
+    logger = logging.getLogger(__name__)
     
     try:
-        print_section_header(logger, "PLANT DISEASE CLASSIFICATION TRAINING")
+        logger.info("Loading and preparing data...")
         
-        # System information
-        logger.info("\nSystem Information:")
-        logger.info(f"TensorFlow version: {tf.__version__}")
-        logger.info(f"GPU available: {bool(tf.config.list_physical_devices('GPU'))}")
-        logger.info(f"Training start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        # Load data from raw directory
+        data_dir = Path("data/raw")
+        if not data_dir.exists():
+            raise FileNotFoundError(f"Data directory not found: {data_dir}")
         
-        # Initialize components with progress tracking
-        print_section_header(logger, "INITIALIZING COMPONENTS")
-        components = {
-            "Data Processor": DataProcessor(),
-            "Feature Extractor": FeatureExtractor(),
-            "Visualizer": Visualizer(),
-            "PCA Analyzer": PCAAnalyzer(),
-            "Disease Classifier": DiseaseClassifier(),
-            "IoU Calculator": IoUCalculator(),
-            "ML Classifiers": MLClassifiers(random_state=ML_CONFIG["random_forest"]["random_state"])
-        }
-        
-        for name, component in components.items():
-            logger.info(f"✓ Initialized {name}")
-        
-        # Data loading and preprocessing with progress bar
-        print_section_header(logger, "DATA LOADING AND PREPROCESSING")
-        with tqdm(total=3, desc="Loading data") as pbar:
-            logger.info("Loading training data...")
-            train_data, val_data, test_data = components["Data Processor"].load_and_preprocess_data("data/raw")
-            pbar.update(3)
-        
-        # Print dataset statistics
-        logger.info("\nDataset Statistics:")
-        logger.info(f"Training samples: {len(train_data)}")
-        logger.info(f"Validation samples: {len(val_data)}")
-        logger.info(f"Test samples: {len(test_data)}")
-        
-        # Feature extraction with progress tracking
-        print_section_header(logger, "FEATURE EXTRACTION")
-        with tqdm(total=3, desc="Extracting features") as pbar:
-            logger.info("Extracting features from training data...")
-            X_train, y_train = components["Feature Extractor"].extract_all_features(train_data)
-            pbar.update(1)
-            
-            logger.info("Extracting features from validation data...")
-            X_val, y_val = components["Feature Extractor"].extract_all_features(val_data)
-            pbar.update(1)
-            
-            logger.info("Extracting features from test data...")
-            X_test, y_test = components["Feature Extractor"].extract_all_features(test_data)
-            pbar.update(1)
-        
-        # PCA Analysis with detailed output
-        print_section_header(logger, "PCA ANALYSIS")
-        X_train_pca = components["PCA Analyzer"].fit_transform(X_train)
-        logger.info("PCA Analysis Results:")
-        logger.info(f"Explained variance ratio: {components['PCA Analyzer'].pca.explained_variance_ratio_[:5]}")
-        
-        # ML Classifiers Training with progress tracking
-        print_section_header(logger, "TRAINING ML CLASSIFIERS")
-        ml_classifiers = components["ML Classifiers"]
-        with tqdm(total=4, desc="Training classifiers") as pbar:
-            logger.info("Training Random Forest...")
-            ml_classifiers.train_random_forest(X_train, y_train)
-            pbar.update(1)
-            
-            logger.info("Training SVM...")
-            ml_classifiers.train_svm(X_train, y_train)
-            pbar.update(1)
-            
-            logger.info("Training Logistic Regression...")
-            ml_classifiers.train_logistic_regression(X_train, y_train)
-            pbar.update(1)
-            
-            logger.info("Training Voting Classifier...")
-            ml_classifiers.train_voting_classifier(X_train, y_train)
-            pbar.update(1)
-        
-        # Evaluate ML classifiers
-        ml_results = ml_classifiers.evaluate(X_test, y_test, components["Data Processor"].class_names)
-        
-        # ResNet Training with progress tracking
-        print_section_header(logger, "TRAINING RESNET MODEL")
-        resnet_model = ResNetModel(num_classes=len(components["Data Processor"].class_names))
-        resnet_model.compile()
-        
-        # Create data generators
-        train_generator = components["Data Processor"].create_data_generator(train_data, is_training=True)
-        val_generator = components["Data Processor"].create_data_generator(val_data, is_training=False)
-        
-        # Initialize HeatmapGenerator
-        heatmap_generator = HeatmapGenerator(resnet_model.model)
-        
-        # Training callback for activation analysis
-        class ActivationAnalysisCallback(tf.keras.callbacks.Callback):
-            def on_epoch_end(self, epoch, logs=None):
-                if (epoch + 1) % 5 == 0:  # Every 5 epochs
-                    batch_images, _ = next(val_generator)
-                    save_dir = OUTPUTS_DIR / "activations" / f"epoch_{epoch+1}"
-                    save_layer_activations(heatmap_generator, batch_images, save_dir)
-        
-        # Train ResNet with progress tracking and activation analysis
-        history = resnet_model.train(
-            train_generator,
-            val_generator,
-            epochs=MODEL_CONFIG["epochs"],
-            callbacks=[
-                tf.keras.callbacks.ProgbarLogger(count_mode='steps'),
-                tf.keras.callbacks.ModelCheckpoint(
-                    filepath=str(OUTPUTS_DIR / "models" / "resnet_best.h5"),
-                    save_best_only=True,
-                    monitor='val_accuracy'
-                ),
-                ActivationAnalysisCallback()
-            ]
+        # Create data generators with augmentation for training
+        train_generator = data_processor.create_data_generator(
+            str(data_dir),
+            is_training=True
         )
         
-        # Generate visualizations
-        print_section_header(logger, "GENERATING VISUALIZATIONS")
-        
-        # Training history plots
-        components["Visualizer"].plot_training_history(history)
-        logger.info("✓ Saved training history plots")
-        
-        # Evaluate models
-        print_section_header(logger, "MODEL EVALUATION")
-        test_generator = components["Data Processor"].create_data_generator(test_data, is_training=False)
-        resnet_metrics = resnet_model.evaluate(test_generator)
-        
-        # Generate comprehensive heatmap analysis
-        print_section_header(logger, "GENERATING HEATMAP ANALYSIS")
-        
-        # Get a batch of test images
-        test_batch = next(test_generator)
-        predictions = resnet_model.model.predict(test_batch[0])
-        
-        # Generate comparative heatmaps
-        generate_comparative_heatmaps(
-            heatmap_generator,
-            test_batch,
-            predictions,
-            components["Data Processor"].class_names,
-            OUTPUTS_DIR / "visualizations" / "heatmaps" / "comparative"
+        # Create validation generator
+        val_generator = data_processor.create_data_generator(
+            str(data_dir),
+            is_training=False
         )
         
-        # Save layer activations for final model
-        save_layer_activations(
-            heatmap_generator,
-            test_batch[0],
-            OUTPUTS_DIR / "activations" / "final_model"
+        # Create test generator
+        test_generator = data_processor.create_data_generator(
+            str(data_dir),
+            is_training=False
         )
         
-        # Generate batch heatmaps with progress tracking
-        with tqdm(total=len(test_batch[0]), desc="Generating batch heatmaps") as pbar:
-            heatmaps = heatmap_generator.generate_multiple_heatmaps(
-                test_batch[0],
-                class_indices=np.argmax(predictions, axis=1),
-                save_dir=OUTPUTS_DIR / "visualizations" / "heatmaps" / "batch",
-                batch_size=8
-            )
-            pbar.update(len(test_batch[0]))
+        logger.info(f"Found {train_generator.samples} training samples")
+        logger.info(f"Found {val_generator.samples} validation samples")
+        logger.info(f"Found {test_generator.samples} test samples")
         
-        # Disease Analysis with progress tracking
-        print_section_header(logger, "DISEASE ANALYSIS")
-        
-        with tqdm(total=len(test_batch[0]), desc="Analyzing diseases") as pbar:
-            for i, (img, pred) in enumerate(zip(test_batch[0], predictions)):
-                # Get disease mask and heatmap
-                mask = components["Feature Extractor"].segment_disease(img)
-                heatmap = heatmaps[i]
-                
-                # Calculate IoU between heatmap and disease mask
-                iou = components["IoU Calculator"].calculate_iou(
-                    (heatmap > 0.5).astype(np.uint8),
-                    mask
-                )
-                
-                # Generate and save analysis
-                report = components["Disease Classifier"].generate_report(
-                    img, pred, mask, heatmap_iou=iou
-                )
-                
-                components["Disease Classifier"].visualize_analysis(
-                    img,
-                    mask,
-                    report,
-                    heatmap=heatmap,
-                    save_path=OUTPUTS_DIR / "visualizations" / "disease_analysis" / f"analysis_{i}.png"
-                )
-                pbar.update(1)
-        
-        # Save models
-        print_section_header(logger, "SAVING MODELS")
-        ml_classifiers.save_models(OUTPUTS_DIR / "models")
-        resnet_model.save_model(OUTPUTS_DIR / "models" / "resnet_model.h5")
-        logger.info("✓ Saved all models")
-        
-        # Generate final report
-        print_section_header(logger, "GENERATING FINAL REPORT")
-        generate_comprehensive_report(
-            OUTPUTS_DIR / "reports",
-            ml_results,
-            resnet_metrics,
-            components["Data Processor"].class_names,
-            start_time,
-            heatmap_analysis=True
-        )
-        
-        # Training complete
-        end_time = time.time()
-        training_time = end_time - start_time
-        print_section_header(logger, "TRAINING COMPLETE")
-        logger.info(f"Total training time: {training_time/3600:.2f} hours")
-        logger.info(f"Results saved in: {OUTPUTS_DIR}")
+        return train_generator, val_generator, test_generator
         
     except Exception as e:
-        logger.error(f"Error during training: {str(e)}", exc_info=True)
+        logger.error(f"Error loading data: {str(e)}")
         raise
 
 def generate_comprehensive_report(output_dir, ml_results, resnet_metrics, class_names, start_time, heatmap_analysis=False):
@@ -380,15 +201,94 @@ def generate_comprehensive_report(output_dir, ml_results, resnet_metrics, class_
         f.write("End of Report\n")
         f.write("=" * 80 + "\n")
 
-if __name__ == "__main__":
-    # Set GPU memory growth
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-            print(f"GPU(s) available: {len(gpus)}")
-        except RuntimeError as e:
-            print(f"GPU memory growth error: {str(e)}")
+def train_model(model, train_data, val_data, callbacks=None):
+    """Train the model."""
+    logger = logging.getLogger(__name__)
     
+    try:
+        logger.info("Starting model training...")
+        history = model.fit(
+            train_data,
+            validation_data=val_data,
+            epochs=50,  # You can adjust this
+            callbacks=callbacks
+        )
+        logger.info("Model training completed")
+        return history
+        
+    except Exception as e:
+        logger.error(f"Error during training: {str(e)}")
+        raise
+
+def evaluate_model(model, test_data):
+    """Evaluate the trained model."""
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info("Evaluating model...")
+        results = model.evaluate(test_data)
+        logger.info(f"Test accuracy: {results[1]:.4f}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error during evaluation: {str(e)}")
+        raise
+
+def main():
+    """Main training function."""
+    # Setup logging
+    logger = setup_logging()
+    
+    try:
+        logger.info("Starting training process...")
+        
+        # Check for GPU
+        gpus = tf.config.list_physical_devices('GPU')
+        logger.info(f"GPU(s) available: {len(gpus)}")
+        
+        # Initialize components
+        data_processor = DataProcessor()
+        feature_extractor = FeatureExtractor()
+        ml_classifiers = MLClassifiers()
+        resnet_model = ResNetModel(num_classes=4)  # Adjust based on your classes
+        
+        # Load and prepare data
+        train_data, val_data, test_data = load_and_prepare_data(data_processor)
+        
+        # Build and compile model
+        model = resnet_model.build()
+        resnet_model.compile()
+        
+        # Setup callbacks
+        callbacks = [
+            tf.keras.callbacks.EarlyStopping(
+                monitor='val_accuracy',
+                patience=10,
+                restore_best_weights=True
+            ),
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=str(OUTPUTS_DIR / "models" / "best_model.h5"),
+                monitor='val_accuracy',
+                save_best_only=True
+            ),
+            tf.keras.callbacks.TensorBoard(
+                log_dir=str(OUTPUTS_DIR / "logs" / "tensorboard"),
+                histogram_freq=1
+            )
+        ]
+        
+        # Train model
+        history = train_model(model, train_data, val_data, callbacks)
+        
+        # Evaluate model
+        results = evaluate_model(model, test_data)
+        
+        logger.info("Training pipeline completed successfully")
+        return results
+        
+    except Exception as e:
+        logger.error(f"Training failed: {str(e)}")
+        raise
+
+if __name__ == "__main__":
     main()

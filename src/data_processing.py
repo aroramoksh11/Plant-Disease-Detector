@@ -13,6 +13,8 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import cv2
 from tqdm import tqdm
 from src.config import DATA_CONFIG
+from tensorflow.keras.layers.experimental import preprocessing
+from tensorflow.keras import layers
 
 class DataProcessor:
     """Enhanced data processor class with detailed data handling and augmentation."""
@@ -34,6 +36,14 @@ class DataProcessor:
         self.logger.info(f"Image size: {self.img_size}")
         self.logger.info(f"Batch size: {self.batch_size}")
         self.logger.info(f"Number of classes: {len(self.class_names)}")
+        self.logger.info(f"Augmentation params: {self.augmentation_params}")
+        
+        self.augmentation = tf.keras.Sequential([
+            layers.RandomRotation(0.2),
+            layers.RandomFlip("horizontal_and_vertical"),
+            layers.RandomZoom(0.2),
+            layers.RandomTranslation(0.1, 0.1)
+        ])
     
     def load_and_preprocess_data(self, data_dir: str) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
         """
@@ -195,36 +205,62 @@ class DataProcessor:
         unique, counts = np.unique(labels, return_counts=True)
         return {self.class_names[i]: count for i, count in zip(unique, counts)}
     
-    def create_data_generator(self, data: List[Tuple[np.ndarray, int]], 
-                            is_training: bool = False) -> ImageDataGenerator:
-        """
-        Create a Keras ImageDataGenerator with proper augmentation.
-        
-        Args:
-            data: List of (image, label) tuples
-            is_training: Whether this is for training
+    def create_data_generator(self, data_dir, is_training=False):
+        """Create data generator with augmentation for training."""
+        try:
+            if is_training:
+                datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+                    rescale=1./255,
+                    rotation_range=self.augmentation_params["rotation_range"],
+                    width_shift_range=self.augmentation_params["width_shift_range"],
+                    height_shift_range=self.augmentation_params["height_shift_range"],
+                    horizontal_flip=self.augmentation_params["horizontal_flip"],
+                    vertical_flip=self.augmentation_params["vertical_flip"],
+                    zoom_range=self.augmentation_params["zoom_range"],
+                    shear_range=self.augmentation_params["shear_range"],
+                    fill_mode=self.augmentation_params["fill_mode"],
+                    brightness_range=self.augmentation_params["brightness_range"]
+                )
+            else:
+                datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+                    rescale=1./255
+                )
             
-        Returns:
-            Configured ImageDataGenerator
-        """
-        if is_training:
-            datagen = ImageDataGenerator(
-                rotation_range=20,
-                width_shift_range=0.2,
-                height_shift_range=0.2,
-                horizontal_flip=True,
-                vertical_flip=True,
-                fill_mode='nearest'
+            generator = datagen.flow_from_directory(
+                data_dir,
+                target_size=self.img_size,
+                batch_size=self.batch_size,
+                class_mode='categorical',
+                shuffle=is_training
             )
-        else:
-            datagen = ImageDataGenerator()
-        
-        return datagen.flow(
-            np.array([x[0] for x in data]),
-            np.array([x[1] for x in data]),
-            batch_size=self.batch_size,
-            shuffle=is_training
-        )
+            
+            self.logger.info(f"Created data generator for {'training' if is_training else 'evaluation'}")
+            return generator
+            
+        except Exception as e:
+            self.logger.error(f"Error creating data generator: {str(e)}")
+            raise
+    
+    def load_sample_data(self, n_samples=5):
+        """Load a small sample of data for validation."""
+        try:
+            sample_data = []
+            for class_dir in Path('data/raw').iterdir():
+                if class_dir.is_dir():
+                    files = list(class_dir.glob('*.jpg'))[:n_samples]
+                    for file in files:
+                        img = tf.keras.preprocessing.image.load_img(
+                            file, 
+                            target_size=(224, 224)
+                        )
+                        sample_data.append(
+                            tf.keras.preprocessing.image.img_to_array(img)
+                        )
+            return np.array(sample_data) if sample_data else None
+            
+        except Exception as e:
+            self.logger.error(f"Error loading sample data: {str(e)}")
+            raise
     
     def save_preprocessed_data(self, dataset: tf.data.Dataset, 
                              save_dir: str) -> None:

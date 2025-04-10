@@ -9,21 +9,22 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
 from pathlib import Path
-from .config import VIS_CONFIG, OUTPUTS_DIR, LOGGING_CONFIG
+from .config import VIS_CONFIG, OUTPUTS_DIR
 
-# Set up logging
-logging.basicConfig(**LOGGING_CONFIG)
+# Get logger instead of basic config
 logger = logging.getLogger(__name__)
 
 class PCAAnalyzer:
     def __init__(self, n_components=2):
+        """Initialize PCA analyzer."""
         self.n_components = n_components
         self.pca = PCA(n_components=n_components)
         self.scaler = StandardScaler()
+        self.logger = logging.getLogger(__name__)
         
     def fit_transform(self, features):
         """Fit PCA and transform features."""
-        logger.info("Performing PCA analysis")
+        self.logger.info("Performing PCA analysis")
         
         # Scale features
         scaled_features = self.scaler.fit_transform(features)
@@ -35,7 +36,7 @@ class PCAAnalyzer:
         
     def plot_pca(self, pca_features, labels, class_names, title="PCA Visualization"):
         """Plot PCA results."""
-        logger.info("Plotting PCA visualization")
+        self.logger.info("Plotting PCA visualization")
         
         plt.figure(figsize=VIS_CONFIG["plot_size"])
         
@@ -67,7 +68,7 @@ class PCAAnalyzer:
         
     def plot_variance_explained(self):
         """Plot cumulative explained variance."""
-        logger.info("Plotting explained variance")
+        self.logger.info("Plotting explained variance")
         
         plt.figure(figsize=VIS_CONFIG["plot_size"])
         
@@ -87,7 +88,7 @@ class PCAAnalyzer:
         
     def get_feature_importance(self, feature_names):
         """Get feature importance from PCA components."""
-        logger.info("Calculating feature importance")
+        self.logger.info("Calculating feature importance")
         
         # Get absolute values of PCA components
         components = np.abs(self.pca.components_)

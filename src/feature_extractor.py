@@ -20,32 +20,62 @@ class FeatureExtractor:
     def __init__(self):
         """Initialize feature extractor with configuration settings."""
         self.logger = logging.getLogger(__name__)
-        self.img_size = tuple(FEATURE_CONFIG["image_size"])
-        self.batch_size = FEATURE_CONFIG["batch_size"]
-        self.use_pca = FEATURE_CONFIG["use_pca"]
-        self.n_components = FEATURE_CONFIG["pca_components"]
+        
+        # Get configuration parameters with defaults if not specified
+        self.img_size = tuple(FEATURE_CONFIG.get("image_size", (224, 224)))
+        self.batch_size = FEATURE_CONFIG.get("batch_size", 32)
+        
+        # Initialize feature extraction flags
+        self.use_color = FEATURE_CONFIG.get("color_features", True)
+        self.use_texture = FEATURE_CONFIG.get("texture_features", True)
+        self.use_shape = FEATURE_CONFIG.get("shape_features", True)
+        self.use_hog = FEATURE_CONFIG.get("hog_features", True)
+        self.use_lbp = FEATURE_CONFIG.get("lbp_features", True)
+        self.use_deep = FEATURE_CONFIG.get("deep_features", True)
+        
+        # Add PCA configuration
+        self.use_pca = FEATURE_CONFIG.get("use_pca", False)
+        self.n_components = FEATURE_CONFIG.get("pca_components", 100)
         
         # Initialize feature extractors
         self._init_feature_extractors()
         
+        # Log configuration
         self.logger.info("Initialized FeatureExtractor with configurations:")
         self.logger.info(f"Image size: {self.img_size}")
         self.logger.info(f"Batch size: {self.batch_size}")
-        self.logger.info(f"PCA components: {self.n_components if self.use_pca else 'None'}")
+        self.logger.info(f"Feature types enabled:")
+        self.logger.info(f"  - Color features: {self.use_color}")
+        self.logger.info(f"  - Texture features: {self.use_texture}")
+        self.logger.info(f"  - Shape features: {self.use_shape}")
+        self.logger.info(f"  - HOG features: {self.use_hog}")
+        self.logger.info(f"  - LBP features: {self.use_lbp}")
+        self.logger.info(f"  - Deep features: {self.use_deep}")
+        self.logger.info(f"  - PCA enabled: {self.use_pca}")
+        if self.use_pca:
+            self.logger.info(f"  - PCA components: {self.n_components}")
     
     def _init_feature_extractors(self):
         """Initialize various feature extraction models."""
-        # ResNet feature extractor
-        self.resnet = ResNet50V2(
-            weights='imagenet',
-            include_top=False,
-            pooling='avg'
-        )
-        
-        # Store PCA model
-        self.pca = None if not self.use_pca else PCA(n_components=self.n_components)
-        
-        self.logger.info("Initialized feature extraction models")
+        try:
+            # ResNet feature extractor
+            if self.use_deep:
+                self.resnet = ResNet50V2(
+                    weights='imagenet',
+                    include_top=False,
+                    pooling='avg'
+                )
+            
+            # Initialize PCA if enabled
+            self.pca = None
+            if self.use_pca:
+                self.pca = PCA(n_components=self.n_components)
+            
+            self.logger.info("Feature extraction models initialized successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Error initializing feature extractors: {str(e)}")
+            raise
     
     def extract_deep_features(self, images: np.ndarray) -> np.ndarray:
         """

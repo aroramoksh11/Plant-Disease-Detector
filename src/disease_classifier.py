@@ -7,14 +7,15 @@ import cv2
 from pathlib import Path
 import logging
 from .config import VIS_CONFIG, OUTPUTS_DIR, LOGGING_CONFIG
+from datetime import datetime
 
-# Set up logging
-logging.basicConfig(**LOGGING_CONFIG)
+# Get logger instead of using basicConfig
 logger = logging.getLogger(__name__)
 
 class DiseaseClassifier:
     def __init__(self):
         """Initialize disease classifier with disease information."""
+        self.logger = logging.getLogger(__name__)
         self.disease_info = {
             'bacterial_blight': {
                 'name': 'Bacterial Blight',
@@ -53,7 +54,7 @@ class DiseaseClassifier:
         
     def classify_disease(self, prediction_probs, threshold=0.5):
         """Classify disease based on prediction probabilities."""
-        logger.info("Classifying disease")
+        self.logger.info("Classifying disease")
         
         # Get the predicted class
         predicted_class = np.argmax(prediction_probs)
@@ -73,7 +74,7 @@ class DiseaseClassifier:
         
     def analyze_severity(self, img, mask):
         """Analyze disease severity based on affected area."""
-        logger.info("Analyzing disease severity")
+        self.logger.info("Analyzing disease severity")
         
         # Calculate affected area ratio
         total_pixels = img.shape[0] * img.shape[1]
@@ -96,7 +97,7 @@ class DiseaseClassifier:
         
     def generate_report(self, img, prediction_probs, mask):
         """Generate comprehensive disease report."""
-        logger.info("Generating disease report")
+        self.logger.info("Generating disease report")
         
         # Classify disease
         disease_info = self.classify_disease(prediction_probs)
@@ -108,12 +109,15 @@ class DiseaseClassifier:
         report = {
             'disease': disease_info,
             'severity': severity_info,
+            'timestamp': datetime.now().isoformat(),
+            'image_size': img.shape,
             'recommendations': self._generate_recommendations(
                 disease_info['disease_name'],
                 severity_info['severity_level']
             )
         }
         
+        self.logger.info(f"Generated report for {disease_info['disease_name']}")
         return report
         
     def _generate_recommendations(self, disease_name, severity_level):
@@ -140,7 +144,7 @@ class DiseaseClassifier:
         
     def visualize_analysis(self, img, mask, report, save_path=None):
         """Visualize disease analysis results."""
-        logger.info("Visualizing analysis results")
+        self.logger.info("Visualizing analysis results")
         
         # Create figure
         plt.figure(figsize=VIS_CONFIG["plot_size"])
